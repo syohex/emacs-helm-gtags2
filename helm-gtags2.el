@@ -739,11 +739,6 @@ Always update if value of this variable is nil."
   (interactive)
   (helm-gtags2--common '(helm-source-gtags-select) nil))
 
-;;;###autoload
-(defun helm-gtags2-select-path ()
-  (interactive)
-  (helm-gtags2--common '(helm-source-gtags-select-path) nil))
-
 (defsubst helm-gtags2--beginning-of-defun ()
   (cl-case major-mode
     ((c-mode c++-mode java-mode) 'c-beginning-of-defun)
@@ -868,16 +863,6 @@ Always update if value of this variable is nil."
                (helm-gtags2--select-tag-action c))
              "Move to the referenced point" #'helm-gtags2--select-rtag-action)))
 
-(defun helm-gtags2--select-path-init ()
-  (helm-gtags2--find-tag-directory)
-  (with-current-buffer (helm-candidate-buffer 'global)
-    (let ((options (if (eq helm-gtags2-path-style 'relative) "-Po" "-Poa")))
-      (if (not helm-gtags2-cache-select-result)
-          (progn
-            (process-file "global" nil t nil options)
-            (helm-gtags2--remove-carrige-returns))
-        (helm-gtags2--select-cache-init-common (list options) "GPATH")))))
-
 (defun helm-gtags2--file-name (name)
   (let ((remote (file-remote-p default-directory)))
     (if (not remote)
@@ -905,15 +890,6 @@ Always update if value of this variable is nil."
   (let ((default-directory (with-helm-current-buffer
                              default-directory)))
     (helm-ff-kill-or-find-buffer-fname (helm-gtags2--file-name cand))))
-
-(defvar helm-source-gtags-select-path
-  (helm-build-in-buffer-source "Select path"
-    :init 'helm-gtags2--select-path-init
-    :candidate-number-limit helm-gtags2-maximum-candidates
-    :real-to-display 'helm-gtags2--files-candidate-transformer
-    :persistent-action #'helm-gtags2--file-persistent-action
-    :fuzzy-match helm-gtags2-fuzzy-match
-    :action helm-gtags2--file-util-action))
 
 (defun helm-gtags2--searched-directory ()
   (cl-case (prefix-numeric-value current-prefix-arg)
