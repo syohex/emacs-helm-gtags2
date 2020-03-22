@@ -46,24 +46,6 @@ Input tag name and move to the referenced point.
 
 Input symbol and move to the locations.
 
-#### `helm-gtags2-find-files`
-
-Input file name and open it.
-
-
-You can use those searching commands with prefix key.
-
-| Prefix Key  | Description                       |
-|:------------|:---------------------------------:|
-| C-u         | Searches from specified directory |
-| C-u C-u     | Searches under current directory  |
-| C--         | Jump to symbol with other window  |
-
-
-#### `helm-gtags2-tags-in-this-function`
-
-Show tagnames which are referenced in this function and jump to them.
-
 #### `helm-gtags2-update-tags`
 
 Update TAG file. Default is update only current file,
@@ -92,11 +74,6 @@ Move to next history on context stack.
 #### `helm-gtags2-previous-history`
 
 Move to previous history on context stack.
-
-#### `helm-gtags2-show-stack`
-
-Show context stack with helm interface.
-You can jump to the context.
 
 #### `helm-gtags2-clear-stack`
 
@@ -199,9 +176,9 @@ by itself, so `helm-gtags2.el` is faster than `anything-gtags.el`.
 
 ```lisp
 ;;; Enable helm-gtags2-mode
-(add-hook 'c-mode-hook 'helm-gtags2-mode)
-(add-hook 'c++-mode-hook 'helm-gtags2-mode)
-(add-hook 'asm-mode-hook 'helm-gtags2-mode)
+(add-hook 'c-mode-hook #'helm-gtags2-mode)
+(add-hook 'c++-mode-hook #'helm-gtags2-mode)
+(add-hook 'asm-mode-hook #'helm-gtags2-mode)
 
 ;; customize
 (custom-set-variables
@@ -214,7 +191,6 @@ by itself, so `helm-gtags2.el` is faster than `anything-gtags.el`.
   (define-key helm-gtags2-mode-map (kbd "M-t") 'helm-gtags2-find-tag)
   (define-key helm-gtags2-mode-map (kbd "M-r") 'helm-gtags2-find-rtag)
   (define-key helm-gtags2-mode-map (kbd "M-s") 'helm-gtags2-find-symbol)
-  (define-key helm-gtags2-mode-map (kbd "M-g M-p") 'helm-gtags2-parse-file)
   (define-key helm-gtags2-mode-map (kbd "C-c <") 'helm-gtags2-previous-history)
   (define-key helm-gtags2-mode-map (kbd "C-c >") 'helm-gtags2-next-history)
   (define-key helm-gtags2-mode-map (kbd "M-,") 'helm-gtags2-pop-stack))

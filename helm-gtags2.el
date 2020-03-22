@@ -608,15 +608,6 @@ Always update if value of this variable is nil."
     :fuzzy-match helm-gtags2-fuzzy-match
     :action helm-gtags2--find-file-action))
 
-(defvar helm-source-gtags-pattern
-  (helm-build-in-buffer-source "Find pattern"
-    :init 'helm-gtags2--pattern-init
-    :candidate-number-limit helm-gtags2-maximum-candidates
-    :real-to-display 'helm-gtags2--candidate-transformer
-    :persistent-action 'helm-gtags2--persistent-action
-    :fuzzy-match helm-gtags2-fuzzy-match
-    :action helm-gtags2--find-file-action))
-
 (defvar helm-source-gtags-rtags
   (helm-build-in-buffer-source "Jump to references"
     :init 'helm-gtags2--rtags-init
@@ -688,89 +679,6 @@ Always update if value of this variable is nil."
     :persistent-action 'helm-gtags2--persistent-action
     :fuzzy-match helm-gtags2-fuzzy-match
     :action 'helm-gtags2--show-stack-action))
-
-(defsubst helm-gtags2--beginning-of-defun ()
-  (cl-case major-mode
-    ((c-mode c++-mode java-mode) 'c-beginning-of-defun)
-    (php-mode 'php-beginning-of-defun)
-    (otherwise #'beginning-of-defun)))
-
-(defsubst helm-gtags2--end-of-defun ()
-  (cl-case major-mode
-    ((c-mode c++-mode java-mode malabar-mode) 'c-end-of-defun)
-    (php-mode 'php-end-of-defun)
-    (otherwise #'end-of-defun)))
-
-(defun helm-gtags2--current-funcion-bound ()
-  (save-excursion
-    (let (start)
-      (funcall (helm-gtags2--beginning-of-defun))
-      (setq start (line-number-at-pos))
-      (funcall (helm-gtags2--end-of-defun))
-      (cons start (line-number-at-pos)))))
-
-(defun helm-gtags2--tags-refered-from-this-function ()
-  (let* ((file (helm-gtags2--real-file-name))
-         (bound (helm-gtags2--current-funcion-bound))
-         (start-line (car bound))
-         (end-line (cdr bound)))
-    (with-temp-buffer
-      (unless (process-file "global" nil t nil "-f" "-r" file)
-        (error "Failed: global -f -r %s" file))
-      (goto-char (point-min))
-      (let (tagnames finish)
-        (while (and (not finish) (not (eobp)))
-          (let* ((cols (split-string (helm-current-line-contents) nil t))
-                 (lineno (string-to-number (cl-second cols))))
-            (if (and (> lineno start-line) (< lineno end-line))
-                (let* ((tag (cl-first cols))
-                       (elm (cl-find tag tagnames :test 'equal)))
-                  (unless elm
-                    (push tag tagnames)))
-              (when (>= lineno end-line)
-                (setq finish t)))
-            (forward-line 1)))
-        (reverse tagnames)))))
-
-(defun helm-gtags2--tag-in-function-persistent-action (cand)
-  (let* ((bound (helm-gtags2--current-funcion-bound))
-         (limit (save-excursion
-                  (goto-char (point-min))
-                  (forward-line (cdr bound))
-                  (goto-char (line-end-position))
-                  (point))))
-    (when (search-forward cand nil limit)
-      (helm-highlight-current-line))))
-
-;;;###autoload
-(defun helm-gtags2-tags-in-this-function ()
-  "Show tagnames which are referenced in this function and jump to it."
-  (interactive)
-  (let ((tags (helm-gtags2--tags-refered-from-this-function)))
-    (unless tags
-      (error "There are no tags which are refered from this function."))
-    (let* ((name (format "Tags in [%s]" (which-function)))
-           (tag (helm-comp-read
-                 "Tagnames: " tags
-                 :must-match t :name name
-                 :persistent-action 'helm-gtags2--tag-in-function-persistent-action)))
-      (helm-gtags2-find-tag tag))))
-
-(defun helm-gtags2--source-select-tag (candidate)
-  (helm-build-in-buffer-source "Select Tag"
-    :init (lambda () (helm-gtags2--tags-init candidate))
-    :candidate-number-limit helm-gtags2-maximum-candidates
-    :persistent-action 'helm-gtags2--persistent-action
-    :fuzzy-match helm-gtags2-fuzzy-match
-    :action helm-gtags2--find-file-action))
-
-(defun helm-gtags2--source-select-rtag (candidate)
-  (helm-build-in-buffer-source "Select Rtag"
-    :init (lambda () (helm-gtags2--rtags-init candidate))
-    :candidate-number-limit helm-gtags2-maximum-candidates
-    :persistent-action 'helm-gtags2--persistent-action
-    :fuzzy-match helm-gtags2-fuzzy-match
-    :action helm-gtags2--find-file-action))
 
 (defun helm-gtags2--file-name (name)
   (let ((remote (file-remote-p default-directory)))
@@ -939,61 +847,6 @@ Always update if value of this variable is nil."
   (helm-gtags2--common '(helm-source-gtags-gsyms) tag))
 
 ;;;###autoload
-(defun helm-gtags2-find-pattern (pattern)
-  "Grep and jump by gtags tag files."
-  (interactive
-   (list (helm-gtags2--read-tagname 'pattern)))
-  (helm-gtags2--common '(helm-source-gtags-pattern) pattern))
-
-(defun helm-gtags2--find-file-after-hook ()
-  (helm-gtags2--push-context helm-gtags2--saved-context))
-
-(defvar helm-source-gtags-files
-  (helm-build-in-buffer-source "Find files"
-    :init #'helm-gtags2--files-init
-    :candidate-number-limit helm-gtags2-maximum-candidates
-    :real-to-display #'helm-gtags2--files-candidate-transformer
-    :persistent-action #'helm-gtags2--file-persistent-action
-    :fuzzy-match helm-gtags2-fuzzy-match
-    :action helm-gtags2--file-util-action))
-
-;;;###autoload
-(defun helm-gtags2-find-files (file)
-  "Find file from tagged with gnu global."
-  (interactive
-   (list (helm-gtags2--read-tagname 'find-file)))
-  (add-hook 'helm-after-action-hook 'helm-gtags2--find-file-after-hook)
-  (unwind-protect
-      (helm-gtags2--common '(helm-source-gtags-files) file)
-    (remove-hook 'helm-after-action-hook 'helm-gtags2--find-file-after-hook)))
-
-;;;###autoload
-(defun helm-gtags2-find-tag-from-here ()
-  "Jump point by current point information.
-Jump to definition point if cursor is on its reference.
-Jump to reference point if curosr is on its definition"
-  (interactive)
-  (helm-gtags2--common '(helm-source-gtags-find-tag-from-here) nil))
-
-(defun helm-gtags2--find-preselect-line ()
-  (let ((defun-bound (bounds-of-thing-at-point 'defun)))
-    (if (not defun-bound)
-        (line-number-at-pos)
-      (let ((defun-begin-line (line-number-at-pos (car defun-bound)))
-            (filename (helm-gtags2--real-file-name)))
-        (with-temp-buffer
-          (unless (zerop (process-file "global" nil t nil "-f" filename))
-            (error "Failed: global -f"))
-          (goto-char (point-min))
-          (let (start-line)
-            (while (and (not start-line)
-                        (re-search-forward "^\\S-+\\s-+\\([1-9][0-9]*\\)" nil t))
-              (let ((line (string-to-number (match-string-no-properties 1))))
-                (when (>= line defun-begin-line)
-                  (setq start-line line))))
-            (or start-line (line-number-at-pos))))))))
-
-;;;###autoload
 (defun helm-gtags2-pop-stack ()
   "Jump to previous point on the context stack and pop it from stack."
   (interactive)
@@ -1002,13 +855,6 @@ Jump to reference point if curosr is on its definition"
          (context (pop context-stack)))
     (helm-gtags2--put-context-stack helm-gtags2--tag-location -1 context-stack)
     (helm-gtags2--move-to-context context)))
-
-;;;###autoload
-(defun helm-gtags2-show-stack ()
-  "Show current context stack."
-  (interactive)
-  (helm-other-buffer 'helm-source-gtags-show-stack
-                     (get-buffer-create helm-gtags2--buffer)))
 
 ;;;###autoload
 (defun helm-gtags2-clear-stack ()
