@@ -1,8 +1,8 @@
-;;; test-util.el --- Test utilities of helm-gtags
+;;; test-util.el --- Test utilities of helm-gtags2
 
-;; Copyright (C) 2016 by Syohei YOSHIDA
+;; Copyright (C) 2020 by Shohei YOSHIDA
 
-;; Author: Syohei YOSHIDA <syohex@gmail.com>
+;; Author: Shohei YOSHIDA <syohex@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 ;;; Code:
 
 (require 'ert)
-(require 'helm-gtags)
+(require 'helm-gtags2)
 
 (defmacro with-gtags-project (dirname &rest body)
   "Create temporary gtags project, executes body, remove temporary project."
@@ -43,100 +43,100 @@
 (defsubst dummy-directory ()
   (file-name-as-directory (concat (expand-file-name default-directory) "dummy")))
 
-(ert-deftest helm-gtags--set-parsed-file ()
-  "Test utility `helm-gtags--set-parsed-file'"
+(ert-deftest helm-gtags2--set-parsed-file ()
+  "Test utility `helm-gtags2--set-parsed-file'"
   (let ((this-file (expand-file-name "./this-util.el")))
     (with-current-buffer (find-file-noselect this-file)
-      (should (string= (helm-gtags--set-parsed-file) this-file))
-      (should helm-gtags--parsed-file)
-      (should (string= helm-gtags--parsed-file this-file)))))
+      (should (string= (helm-gtags2--set-parsed-file) this-file))
+      (should helm-gtags2--parsed-file)
+      (should (string= helm-gtags2--parsed-file this-file)))))
 
-(ert-deftest helm-gtags--path-libpath-p ()
-  "Test utility `helm-gtags--path-libpath-p'"
+(ert-deftest helm-gtags2--path-libpath-p ()
+  "Test utility `helm-gtags2--path-libpath-p'"
   (let ((process-environment '("GTAGSLIBPATH=/foo:/bar:/baz")))
-    (should (helm-gtags--path-libpath-p "/foo/"))))
+    (should (helm-gtags2--path-libpath-p "/foo/"))))
 
-(ert-deftest helm-gtags--tag-directory ()
-  "Test utility `helm-gtags--tag-directory'"
+(ert-deftest helm-gtags2--tag-directory ()
+  "Test utility `helm-gtags2--tag-directory'"
   (let ((dummy (dummy-directory)))
     (with-gtags-project dummy
-      (should (string= (helm-gtags--tag-directory) dummy)))))
+      (should (string= (helm-gtags2--tag-directory) dummy)))))
 
-(ert-deftest helm-gtags--find-tag-directory ()
-  "Test utility `helm-gtags--find-tag-directory'"
+(ert-deftest helm-gtags2--find-tag-directory ()
+  "Test utility `helm-gtags2--find-tag-directory'"
   (let ((dummy (dummy-directory)))
     (with-gtags-project (dummy-directory)
-      (let ((got (helm-gtags--find-tag-directory)))
-        (should (string= (helm-gtags--find-tag-directory) dummy))
-        (should (string= helm-gtags--tag-location dummy))))))
+      (let ((got (helm-gtags2--find-tag-directory)))
+        (should (string= (helm-gtags2--find-tag-directory) dummy))
+        (should (string= helm-gtags2--tag-location dummy))))))
 
-(ert-deftest helm-gtags--find-tag-directory-in-libpath ()
-  "Test utility `helm-gtags--find-tag-directory' in library path"
+(ert-deftest helm-gtags2--find-tag-directory-in-libpath ()
+  "Test utility `helm-gtags2--find-tag-directory' in library path"
   (let ((dummy (dummy-directory)))
     (with-gtags-project (dummy-directory)
       (let* ((process-environment (list (concat "GTAGSLIBPATH=" dummy)))
-             (helm-gtags--tag-location "/tmp/")
-             (got (helm-gtags--find-tag-directory)))
-        (should (string= (helm-gtags--find-tag-directory) "/tmp/"))
-        (should (string= helm-gtags--real-tag-location dummy))))))
+             (helm-gtags2--tag-location "/tmp/")
+             (got (helm-gtags2--find-tag-directory)))
+        (should (string= (helm-gtags2--find-tag-directory) "/tmp/"))
+        (should (string= helm-gtags2--real-tag-location dummy))))))
 
-(ert-deftest helm-gtags--construct-options ()
-  "Test utility `helm-gtags--construct-options'"
-  (let ((got (helm-gtags--construct-options 'find-file t)))
+(ert-deftest helm-gtags2--construct-options ()
+  "Test utility `helm-gtags2--construct-options'"
+  (let ((got (helm-gtags2--construct-options 'find-file t)))
     (should (equal got '("-Poa" "-c"))))
 
-  (let ((got (helm-gtags--construct-options 'tag nil)))
+  (let ((got (helm-gtags2--construct-options 'tag nil)))
     (should (equal got '("--result=grep"))))
 
-  (let* ((helm-gtags-path-style 'absolute)
-         (helm-gtags-ignore-case t)
+  (let* ((helm-gtags2-path-style 'absolute)
+         (helm-gtags2-ignore-case t)
          (current-prefix-arg t)
          (process-environment (list "GTAGSLIBPATH=foo:bar" ))
-         (got (helm-gtags--construct-options 'symbol t)))
+         (got (helm-gtags2--construct-options 'symbol t)))
     (should (equal got '("-T" "-l" "-i" "-a" "-s" "-c" "--result=grep")))))
 
-(ert-deftest helm-gtags--construct-options-force-abs-option ()
-  "Test utility `helm-gtags--construct-options' for special case of Windows system"
+(ert-deftest helm-gtags2--construct-options-force-abs-option ()
+  "Test utility `helm-gtags2--construct-options' for special case of Windows system"
 
   (let* ((system-type 'windows-nt)
          (process-environment (list "GTAGSLIBPATH=foo" ))
-         (helm-gtags-path-style 'relative)
-         (got (helm-gtags--construct-options 'tag t)))
+         (helm-gtags2-path-style 'relative)
+         (got (helm-gtags2--construct-options 'tag t)))
     (should (member "-a" got)))
 
   (let* ((system-type 'gnu/linux)
          (process-environment (list "GTAGSLIBPATH=foo" ))
-         (helm-gtags-path-style 'root)
-         (got (helm-gtags--construct-options 'tag t)))
+         (helm-gtags2-path-style 'root)
+         (got (helm-gtags2--construct-options 'tag t)))
     (should-not (member "-a" got))))
 
-(ert-deftest helm-gtags--check-browser-installed ()
-  "Test utility `helm-gtags--browser-installed-p'"
-  (should (ignore-errors (helm-gtags--check-browser-installed "emacs") t))
-  (should-error (helm-gtags--check-browser-installed "InternetChromeFox")))
+(ert-deftest helm-gtags2--check-browser-installed ()
+  "Test utility `helm-gtags2--browser-installed-p'"
+  (should (ignore-errors (helm-gtags2--check-browser-installed "emacs") t))
+  (should-error (helm-gtags2--check-browser-installed "InternetChromeFox")))
 
-(ert-deftest helm-gtags--how-to-update-tags ()
-  "Test utility `helm-gtags--how-to-update-tags'"
-  (should (eq (helm-gtags--how-to-update-tags) 'single-update))
-  (should (eq (helm-gtags--how-to-update-tags) 'single-update))
+(ert-deftest helm-gtags2--how-to-update-tags ()
+  "Test utility `helm-gtags2--how-to-update-tags'"
+  (should (eq (helm-gtags2--how-to-update-tags) 'single-update))
+  (should (eq (helm-gtags2--how-to-update-tags) 'single-update))
   (let ((current-prefix-arg '(4)))
-    (should (eq (helm-gtags--how-to-update-tags) 'entire-update)))
+    (should (eq (helm-gtags2--how-to-update-tags) 'entire-update)))
   (let ((current-prefix-arg 16))
-    (should (eq (helm-gtags--how-to-update-tags) 'generate-other-directory))))
+    (should (eq (helm-gtags2--how-to-update-tags) 'generate-other-directory))))
 
-(ert-deftest helm-gtags--extract-file-and-line ()
-  "Test utility `helm-gtags--extract-file-and-line'"
+(ert-deftest helm-gtags2--extract-file-and-line ()
+  "Test utility `helm-gtags2--extract-file-and-line'"
   (let ((input "C:/Program Files/Microsoft SDKs/Windows/v7.1/Include/Fci.h:44:typedef unsigned int UINT; /* ui */"))
     (let* ((system-type 'windows-nt)
-           (got (helm-gtags--extract-file-and-line input))
+           (got (helm-gtags2--extract-file-and-line input))
            (file (car got))
            (line (cdr got)))
       (should (string= file "C:/Program Files/Microsoft SDKs/Windows/v7.1/Include/Fci.h"))
       (should (= line 44)))
 
-    ;; https://github.com/syohex/emacs-helm-gtags/issues/80
+    ;; https://github.com/syohex/emacs-helm-gtags2/issues/80
     (let* ((system-type 'windows-nt)
-           (got (helm-gtags--extract-file-and-line "../include/stdio.h:30:#define hoge 1")))
+           (got (helm-gtags2--extract-file-and-line "../include/stdio.h:30:#define hoge 1")))
       (should got)
       (let ((file (car got))
             (line (cdr got)))
@@ -144,17 +144,17 @@
        (should (= line 30))))
 
     (let* ((system-type 'gnu/linux)
-           (got (helm-gtags--extract-file-and-line "/usr/include/stdio.h:30:#define hoge 1"))
+           (got (helm-gtags2--extract-file-and-line "/usr/include/stdio.h:30:#define hoge 1"))
            (file (car got))
            (line (cdr got)))
       (should (string= file "/usr/include/stdio.h"))
       (should (= line 30)))))
 
-(ert-deftest helm-gtags--transformer-regexp ()
-  "Test utility `helm-gtags--transformer-regexp'"
+(ert-deftest helm-gtags2--transformer-regexp ()
+  "Test utility `helm-gtags2--transformer-regexp'"
   (let ((input "C:/Program Files/Microsoft SDKs/Windows/v7.1/Include/Fci.h:44:typedef unsigned int UINT; /* ui */"))
     (let* ((system-type 'windows-nt)
-           (regexp (helm-gtags--transformer-regexp input)))
+           (regexp (helm-gtags2--transformer-regexp input)))
       (should (string-match regexp input))
       (should (string= (match-string-no-properties 1 input)
                        "C:/Program Files/Microsoft SDKs/Windows/v7.1/Include/Fci.h"))
@@ -162,12 +162,12 @@
 
     (let* ((system-type 'gnu/linux)
            (input "/usr/include/stdio.h:30:#define hoge 1")
-           (regexp (helm-gtags--transformer-regexp input)))
+           (regexp (helm-gtags2--transformer-regexp input)))
       (should (string-match regexp input))
       (should (string= (match-string-no-properties 1 input) "/usr/include/stdio.h"))
       (should (string= (match-string-no-properties 2 input) "30")))))
 
-(ert-deftest helm-gtags--label-option ()
-  "Test utility `helm-gtags--label-option'"
-  (let ((option (helm-gtags--label-option "ctags")))
+(ert-deftest helm-gtags2--label-option ()
+  "Test utility `helm-gtags2--label-option'"
+  (let ((option (helm-gtags2--label-option "ctags")))
     (should (string= option "--gtagslabel=ctags"))))

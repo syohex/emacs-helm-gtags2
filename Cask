@@ -1,4 +1,4 @@
 (source gnu)
 (source melpa)
 
-(package-file "helm-gtags.el")
+(package-file "helm-gtags2.el")
