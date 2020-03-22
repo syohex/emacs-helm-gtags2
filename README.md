@@ -142,43 +142,6 @@ Resurrect previously invoked `helm-gtags2` command.
 This is similar to `helm-resume` however this command resurrects helm gtags
 buffer if other helm commands are called.
 
-## Using Suggested Key Mapping
-
-`helm-gtags2.el` provides suggested key maps like `gtags.el` by setting
-`helm-gtags2-suggested-key-mapping` to non-nil. Its prefix key is `C-c`
-as default. You can change prefix by setting `helm-gtags2-prefix-key`.
-
-You have to set them before loading `helm-gtags2.el`.
-I recommend you to use `custom-set-variables` for setting this value.
-
-```lisp
-(custom-set-variables
- '(helm-gtags2-prefix-key "\C-t")
- '(helm-gtags2-suggested-key-mapping t))
-```
-
-If you use `invalid modifier string`(like `C-,`) as prefix key, please don't
-escape Control prefix.(OK: `C-,`, NG: `\C-,`).
-
-### Default Key Mapping
-
-|Key         |Command                          |
-|:-----------|:--------------------------------|
-|Prefix `h`  | helm-gtags2-display-browser      |
-|Prefix `C-]`| helm-gtags2-find-tag-from-here   |
-|Prefix `C-t`| helm-gtags2-pop-stack            |
-|Prefix `P`  | helm-gtags2-find-files           |
-|Prefix `f`  | helm-gtags2-parse-file           |
-|Prefix `g`  | helm-gtags2-find-pattern         |
-|Prefix `s`  | helm-gtags2-find-symbol          |
-|Prefix `r`  | helm-gtags2-find-rtag            |
-|Prefix `t`  | helm-gtags2-find-tag             |
-|Prefix `d`  | helm-gtags2-find-tag             |
-|M-*         | helm-gtags2-pop-stack            |
-|M-.         | helm-gtags2-find-tag             |
-|C-x 4 .     | helm-gtags2-find-tag-other-window|
-
-
 ## Customize Variables
 
 #### `helm-gtags2-path-style`(Default `'root`)

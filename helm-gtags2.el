@@ -109,10 +109,6 @@ Always update if value of this variable is nil."
   "If non-nil, it is used for the prefix key of gtags-xxx command."
   :type 'string)
 
-(defcustom helm-gtags2-suggested-key-mapping nil
-  "If non-nil, suggested key mapping is enabled."
-  :type 'boolean)
-
 (defcustom helm-gtags2-preselect nil
   "If non-nil, preselect current file and line."
   :type 'boolean)
@@ -1307,31 +1303,6 @@ Generate new TAG file in selected directory with `C-u C-u'"
         (add-hook 'after-save-hook 'helm-gtags2-update-tags nil t))
     (when helm-gtags2-auto-update
       (remove-hook 'after-save-hook 'helm-gtags2-update-tags t))))
-
-;; Key mapping of gtags-mode.
-(when helm-gtags2-suggested-key-mapping
-  ;; Current key mapping.
-  (let ((command-table '(("h" . helm-gtags2-display-browser)
-                         ("P" . helm-gtags2-find-files)
-                         ("f" . helm-gtags2-parse-file)
-                         ("g" . helm-gtags2-find-pattern)
-                         ("s" . helm-gtags2-find-symbol)
-                         ("r" . helm-gtags2-find-rtag)
-                         ("t" . helm-gtags2-find-tag)
-                         ("d" . helm-gtags2-find-tag)))
-        (key-func (if (string-prefix-p "\\" helm-gtags2-prefix-key)
-                      #'concat
-                    (lambda (prefix key) (kbd (concat prefix " " key))))))
-    (cl-loop for (key . command) in command-table
-             do
-             (define-key helm-gtags2-mode-map (funcall key-func helm-gtags2-prefix-key key) command))
-
-    ;; common
-    (define-key helm-gtags2-mode-map "\C-]" 'helm-gtags2-find-tag-from-here)
-    (define-key helm-gtags2-mode-map "\C-t" 'helm-gtags2-pop-stack)
-    (define-key helm-gtags2-mode-map "\e*" 'helm-gtags2-pop-stack)
-    (define-key helm-gtags2-mode-map "\e." 'helm-gtags2-find-tag)
-    (define-key helm-gtags2-mode-map "\C-x4." 'helm-gtags2-find-tag-other-window)))
 
 (provide 'helm-gtags2)
 
