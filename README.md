@@ -46,22 +46,6 @@ Input tag name and move to the referenced point.
 
 Input symbol and move to the locations.
 
-#### `helm-gtags2-update-tags`
-
-Update TAG file. Default is update only current file,
-You can update all files with `C-u` prefix.
-
-#### `helm-gtags2-create-tags`
-
-Create TAG file. Please choose `default` as `GTAGSLABEL` if you don't enable
-`--with-ctags` and plugin parser options. If you use homebrew on MacOSX,
-you can enable those features by following command.
-
-```
-# You should uninstall global at first if you already install global
-% brew install global --with-ctags --with-pygments
-```
-
 #### `helm-gtags2-pop-stack`
 
 Move to previous point on the stack.
@@ -114,23 +98,9 @@ Highlighting candidates if this value is `non-nil`
 Show detail information if this value is `'detail`,
 show reference point of function etc.
 
-#### `helm-gtags2-auto-update`(Default `nil`)
-
-If this variable is non-nil, TAG file is updated after saving buffer
-
-#### `helm-gtags2-update-interval-second`(Default `60`)
-
-Tags are updated in `after-save-hook' if this seconds is passed from last update
-Always update if value of this variable is nil.
-
 #### `helm-gtags2-pulse-at-cursor`(Default `nil`)
 
 If this variable is non-nil, pulse at point after jumping
-
-#### `helm-gtags2-fuzzy-match`(Default `nil`)
-
-Enable fuzzy match.
-You should set this value before loading `helm-gtags2.el`.
 
 #### `helm-gtags2-direct-helm-completing`(Default `nil`)
 
@@ -142,13 +112,7 @@ Maximum number of helm candidates in `helm-gtags2.el`.
 Please set small number if you feel slow for large source tree
 such as Linux kernel.
 
-Default value is
-- 9999(Disable fuzzy match)
-- 100(Enable fuzzy match)
-
-#### `helm-gtags2-preselect`
-
-If this variable is non-nil, preselect current file and line.
+Default value is 9999
 
 ## Faces
 
@@ -183,8 +147,7 @@ by itself, so `helm-gtags2.el` is faster than `anything-gtags.el`.
 ;; customize
 (custom-set-variables
  '(helm-gtags2-path-style 'relative)
- '(helm-gtags2-ignore-case t)
- '(helm-gtags2-auto-update t))
+ '(helm-gtags2-ignore-case t))
 
 ;; key bindings
 (with-eval-after-load 'helm-gtags2

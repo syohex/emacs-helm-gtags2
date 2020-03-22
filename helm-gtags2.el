@@ -74,19 +74,9 @@
   "Gtags read only mode."
   :type 'boolean)
 
-(defcustom helm-gtags2-auto-update nil
-  "*If non-nil, tag files are updated whenever a file is saved."
-  :type 'boolean)
-
 (defcustom helm-gtags2-pulse-at-cursor t
   "If non-nil, pulse at point after jumping"
   :type 'boolean)
-
-(defcustom helm-gtags2-update-interval-second 60
-  "Tags are updated in `after-save-hook' if this seconds is passed from last update.
-Always update if value of this variable is nil."
-  :type '(choice (integer :tag "Update interval seconds")
-                 (boolean :tag "Update every time" nil)))
 
 (defcustom helm-gtags2-highlight-candidate t
   "Highlight candidate or not"
@@ -94,14 +84,6 @@ Always update if value of this variable is nil."
 
 (defcustom helm-gtags2-use-input-at-cursor nil
   "Use input at cursor"
-  :type 'boolean)
-
-(defcustom helm-gtags2-prefix-key "\C-c"
-  "If non-nil, it is used for the prefix key of gtags-xxx command."
-  :type 'string)
-
-(defcustom helm-gtags2-preselect nil
-  "If non-nil, preselect current file and line."
   :type 'boolean)
 
 (defcustom helm-gtags2-display-style nil
@@ -698,17 +680,6 @@ Always update if value of this variable is nil."
 (defsubst helm-gtags2--label-option (label)
   (concat "--gtagslabel=" label))
 
-;;;###autoload
-(defun helm-gtags2-create-tags (dir label)
-  (interactive
-   (list (read-directory-name "Root Directory: ")
-         (helm-gtags2--read-gtagslabel)))
-  (let ((default-directory dir)
-        (proc-buf (get-buffer-create " *helm-gtags2-create*")))
-    (let ((proc (start-file-process "helm-gtags2-create" proc-buf
-                                    "gtags" "-q" (helm-gtags2--label-option label))))
-      (set-process-sentinel proc (helm-gtags2--make-gtags-sentinel 'create)))))
-
 (defun helm-gtags2--find-tag-simple ()
   (or (getenv "GTAGSROOT")
       (locate-dominating-file default-directory "GTAGS")
@@ -741,9 +712,7 @@ Always update if value of this variable is nil."
   (let ((helm-quit-if-no-candidate t)
         (helm-execute-action-at-once-if-one t)
         (dir (helm-gtags2--searched-directory))
-        (src (car srcs))
-        (preselect-regexp (when helm-gtags2-preselect
-                            (regexp-quote (helm-gtags2--current-file-and-line)))))
+        (src (car srcs)))
     (when (symbolp src)
       (setq src (symbol-value src)))
     (unless helm-gtags2--use-otherwin
@@ -754,8 +723,7 @@ Always update if value of this variable is nil."
       (helm-attrset 'helm-gtags2-base-directory dir src)
       (when tagname
         (helm-attrset 'name (format "%s in %s" tagname (or dir tagroot)) src))
-      (helm :sources srcs :buffer helm-gtags2--buffer
-            :preselect preselect-regexp))))
+      (helm :sources srcs :buffer helm-gtags2--buffer))))
 
 ;;;###autoload
 (defun helm-gtags2-find-tag (tag)
@@ -811,47 +779,6 @@ Always update if value of this variable is nil."
   (message "Clear all context statks.")
   (setq helm-gtags2--context-stack (make-hash-table :test 'equal)))
 
-(defun helm-gtags2--read-tag-directory ()
-  (let ((dir (read-directory-name "Directory tag generated: " nil nil t)))
-    ;; On Windows, "gtags d:/tmp" work, but "gtags d:/tmp/" doesn't
-    (directory-file-name (expand-file-name dir))))
-
-(defsubst helm-gtags2--how-to-update-tags ()
-  (cl-case (prefix-numeric-value current-prefix-arg)
-    (4 'entire-update)
-    (16 'generate-other-directory)
-    (otherwise 'single-update)))
-
-(defun helm-gtags2--update-tags-command (how-to)
-  (cl-case how-to
-    (entire-update '("global" "-u"))
-    (generate-other-directory (list "gtags" (helm-gtags2--read-tag-directory)))
-    (single-update (list "global" "--single-update" (helm-gtags2--real-file-name)))))
-
-(defun helm-gtags2--update-tags-p (how-to interactive-p current-time)
-  (or interactive-p
-      (and (eq how-to 'single-update)
-           (buffer-file-name)
-           (or (not helm-gtags2-update-interval-second)
-               (>= (- current-time helm-gtags2--last-update-time)
-                   helm-gtags2-update-interval-second)))))
-
-;;;###autoload
-(defun helm-gtags2-update-tags ()
-  "Update TAG file. Update All files with `C-u' prefix.
-Generate new TAG file in selected directory with `C-u C-u'"
-  (interactive)
-  (let ((how-to (helm-gtags2--how-to-update-tags))
-        (interactive-p (called-interactively-p 'interactive))
-        (current-time (float-time (current-time))))
-    (when (helm-gtags2--update-tags-p how-to interactive-p current-time)
-      (let* ((cmds (helm-gtags2--update-tags-command how-to))
-             (proc (apply #'start-file-process "helm-gtags2-update-tag" nil cmds)))
-        (if (not proc)
-            (message "Failed: %s" (string-join cmds " "))
-          (set-process-sentinel proc (helm-gtags2--make-gtags-sentinel 'update))
-          (setq helm-gtags2--last-update-time current-time))))))
-
 ;;;###autoload
 (defun helm-gtags2-resume ()
   "Resurrect previously invoked `helm-gtags2` command."
@@ -869,12 +796,7 @@ Generate new TAG file in selected directory with `C-u C-u'"
   :init-value nil
   :global     nil
   :keymap     helm-gtags2-mode-map
-  :lighter    helm-gtags2-mode-name
-  (if helm-gtags2-mode
-      (when helm-gtags2-auto-update
-        (add-hook 'after-save-hook 'helm-gtags2-update-tags nil t))
-    (when helm-gtags2-auto-update
-      (remove-hook 'after-save-hook 'helm-gtags2-update-tags t))))
+  :lighter    helm-gtags2-mode-name)
 
 (provide 'helm-gtags2)
 
