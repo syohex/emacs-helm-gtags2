@@ -76,7 +76,6 @@ Find name by context.
 
 Show tagnames which are referenced in this function and jump to them.
 
-
 #### `helm-gtags2-update-tags`
 
 Update TAG file. Default is update only current file,
@@ -93,19 +92,10 @@ you can enable those features by following command.
 % brew install global --with-ctags --with-pygments
 ```
 
-#### `helm-gtags2-parse-file`
-
-Show symbols in current file like `gtags-parse-file`. You can choose
-any files with `C-u` prefix.
-
 #### `helm-gtags2-pop-stack`
 
 Move to previous point on the stack.
 helm-gtags2 pushes current point to stack before executing each jump functions.
-
-#### `helm-gtags2-push-stack`
-
-Push current location to the stack.
 
 #### `helm-gtags2-next-history`
 

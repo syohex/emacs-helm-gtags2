@@ -40,7 +40,6 @@
 ;;          (define-key helm-gtags2-mode-map (kbd "M-t") 'helm-gtags2-find-tag)
 ;;          (define-key helm-gtags2-mode-map (kbd "M-r") 'helm-gtags2-find-rtag)
 ;;          (define-key helm-gtags2-mode-map (kbd "M-s") 'helm-gtags2-find-symbol)
-;;          (define-key helm-gtags2-mode-map (kbd "M-g M-p") 'helm-gtags2-parse-file)
 ;;          (define-key helm-gtags2-mode-map (kbd "C-c <") 'helm-gtags2-previous-history)
 ;;          (define-key helm-gtags2-mode-map (kbd "C-c >") 'helm-gtags2-next-history)
 ;;          (define-key helm-gtags2-mode-map (kbd "M-,") 'helm-gtags2-pop-stack)))
@@ -150,7 +149,6 @@ Always update if value of this variable is nil."
 (defvar helm-gtags2--saved-context nil)
 (defvar helm-gtags2--use-otherwin nil)
 (defvar helm-gtags2--local-directory nil)
-(defvar helm-gtags2--parsed-file nil)
 (defvar helm-gtags2--current-position nil)
 (defvar helm-gtags2--real-tag-location nil)
 (defvar helm-gtags2--last-input nil)
@@ -550,13 +548,6 @@ Always update if value of this variable is nil."
                    (error "Error: %s" (buffer-string)))
                   (t (error "%s: not found" token)))))))))
 
-(defun helm-gtags2--parse-file-init ()
-  (with-current-buffer (helm-candidate-buffer 'global)
-    (unless (zerop (process-file "global" nil t nil
-                                 "--result=cscope" "-f" helm-gtags2--parsed-file))
-      (error "Failed: 'global --result=cscope -f %s" helm-gtags2--parsed-file))
-    (helm-gtags2--remove-carrige-returns)))
-
 (defun helm-gtags2--push-context (context)
   (let* ((context-info (helm-gtags2--get-or-create-context-info))
          (current-index (plist-get context-info :index))
@@ -586,11 +577,6 @@ Always update if value of this variable is nil."
   (if (string-match "\\s-+\\([1-9][0-9]+\\)\\s-+" cand)
       (string-to-number (match-string-no-properties 1 cand))
     (error "Can't find line number in %s" cand)))
-
-(defun helm-gtags2--parse-file-action (cand)
-  (let ((line (helm-gtags2--find-line-number cand))
-        (open-func (helm-gtags2--select-find-file-func)))
-    (helm-gtags2--do-open-file open-func helm-gtags2--parsed-file line)))
 
 (defsubst helm-gtags2--has-drive-letter-p (path)
   (string-match-p "\\`[a-zA-Z]:" path))
@@ -722,14 +708,6 @@ Always update if value of this variable is nil."
                 (propertize (match-string 2 candidate) 'face 'helm-gtags2-lineno)
                 (helm-gtags2--highlight-candidate (match-string 3 candidate)))))))
 
-(defun helm-gtags2--parse-file-candidate-transformer (file)
-  (let ((removed-file (replace-regexp-in-string "\\`\\S-+ " "" file)))
-    (when (string-match "\\`\\(\\S-+\\) \\(\\S-+\\) \\(.+\\)\\'" removed-file)
-      (format "%-25s %-5s %s"
-              (match-string-no-properties 1 removed-file)
-              (match-string-no-properties 2 removed-file)
-              (match-string-no-properties 3 removed-file)))))
-
 (defvar helm-source-gtags-find-tag-from-here
   (helm-build-in-buffer-source "Find tag from here"
     :init 'helm-gtags2--find-tag-from-here-init
@@ -738,14 +716,6 @@ Always update if value of this variable is nil."
     :persistent-action 'helm-gtags2--persistent-action
     :fuzzy-match helm-gtags2-fuzzy-match
     :action helm-gtags2--find-file-action))
-
-(defvar helm-source-gtags-parse-file
-  (helm-build-in-buffer-source "Parse file"
-    :init 'helm-gtags2--parse-file-init
-    :candidate-number-limit helm-gtags2-maximum-candidates
-    :real-to-display 'helm-gtags2--parse-file-candidate-transformer
-    :fuzzy-match helm-gtags2-fuzzy-match
-    :action 'helm-gtags2--parse-file-action))
 
 (defun helm-gtags2--show-stack-action (cand)
   (let* ((index (get-text-property 0 'index cand))
@@ -1135,13 +1105,6 @@ Jump to reference point if curosr is on its definition"
           (helm-gtags2-find-tag-from-here)
         (call-interactively 'helm-gtags2-find-tag)))))
 
-(defun helm-gtags2--set-parsed-file ()
-  (let* ((this-file (file-name-nondirectory (buffer-file-name)))
-         (file (if current-prefix-arg
-                   (read-file-name "Parsed File: " nil this-file)
-                 this-file)))
-    (setq helm-gtags2--parsed-file (expand-file-name file))))
-
 (defun helm-gtags2--find-preselect-line ()
   (let ((defun-bound (bounds-of-thing-at-point 'defun)))
     (if (not defun-bound)
@@ -1159,31 +1122,6 @@ Jump to reference point if curosr is on its definition"
                 (when (>= line defun-begin-line)
                   (setq start-line line))))
             (or start-line (line-number-at-pos))))))))
-
-;;;###autoload
-(defun helm-gtags2-parse-file ()
-  "Parse current file with gnu global. This is similar to `imenu'.
-You can jump definitions of functions, symbols in this file."
-  (interactive)
-  (helm-gtags2--find-tag-directory)
-  (helm-gtags2--save-current-context)
-  (setq helm-gtags2--use-otherwin (helm-gtags2--using-other-window-p))
-  (helm-gtags2--set-parsed-file)
-  (helm-attrset 'name
-                (format "Parsed File: %s"
-                        (file-relative-name helm-gtags2--parsed-file
-                                            helm-gtags2--tag-location))
-                helm-source-gtags-parse-file)
-  (let ((presel (when helm-gtags2-preselect
-                  (format "^\\S-+\\s-+%d\\s-+" (helm-gtags2--find-preselect-line)))))
-    (helm :sources '(helm-source-gtags-parse-file)
-          :buffer helm-gtags2--buffer :preselect presel)))
-
-;;;###autoload
-(defun helm-gtags2-push-stack ()
-  "Push current location to the stack."
-  (interactive)
-  (helm-gtags2--push-context (helm-gtags2--current-context)))
 
 ;;;###autoload
 (defun helm-gtags2-pop-stack ()
