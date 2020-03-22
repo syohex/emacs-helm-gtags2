@@ -71,24 +71,6 @@ buffer if other helm commands are called.
 
 ## Customize Variables
 
-#### `helm-gtags2-path-style`(Default `'root`)
-
-File path style, `'root` or `'relative` or `'absolute`.
-You can only use `'absolute` if you use Windows and set `GTAGSLIBPATH` environment variable.
-helm-gtags2.el forces to use absolute style in such case.
-
-#### `helm-gtags2-ignore-case`(Default `nil`)
-
-Ignore case for searching flag
-
-#### `helm-gtags2-read-only`(Default `nil`)
-
-Open file as readonly, if this value is `non-nil`
-
-#### `helm-gtags2-use-input-at-cursor`(Default `nil`)
-
-Use word at cursor as input if this value is `non-nil`
-
 #### `helm-gtags2-highlight-candidate`(Default `t`)
 
 Highlighting candidates if this value is `non-nil`
@@ -101,10 +83,6 @@ show reference point of function etc.
 #### `helm-gtags2-pulse-at-cursor`(Default `nil`)
 
 If this variable is non-nil, pulse at point after jumping
-
-#### `helm-gtags2-direct-helm-completing`(Default `nil`)
-
-Use helm completion instead of normal Emacs completion if this value is non-nil.
 
 #### `helm-gtags2-maximum-candidates`
 
@@ -146,7 +124,6 @@ by itself, so `helm-gtags2.el` is faster than `anything-gtags.el`.
 
 ;; customize
 (custom-set-variables
- '(helm-gtags2-path-style 'relative)
  '(helm-gtags2-ignore-case t))
 
 ;; key bindings

@@ -60,20 +60,6 @@
   "GNU GLOBAL for helm."
   :group 'helm)
 
-(defcustom helm-gtags2-path-style 'root
-  "Style of file path"
-  :type '(choice (const :tag "Root of the current project" root)
-                 (const :tag "Relative from the current directory" relative)
-                 (const :tag "Absolute Path" absolute)))
-
-(defcustom helm-gtags2-ignore-case nil
-  "Ignore case in each search."
-  :type 'boolean)
-
-(defcustom helm-gtags2-read-only nil
-  "Gtags read only mode."
-  :type 'boolean)
-
 (defcustom helm-gtags2-pulse-at-cursor t
   "If non-nil, pulse at point after jumping"
   :type 'boolean)
@@ -82,22 +68,9 @@
   "Highlight candidate or not"
   :type 'boolean)
 
-(defcustom helm-gtags2-use-input-at-cursor nil
-  "Use input at cursor"
-  :type 'boolean)
-
-(defcustom helm-gtags2-display-style nil
-  "Style of display result."
-  :type '(choice (const :tag "Show in detail" detail)
-                 (const :tag "Normal style" nil)))
-
 (defcustom helm-gtags2-maximum-candidates 9999
   "Maximum number of helm candidates"
   :type 'integer)
-
-(defcustom helm-gtags2-direct-helm-completing nil
-  "Use helm mode directly."
-  :type 'boolean)
 
 (defface helm-gtags2-file
   '((t :inherit font-lock-keyword-face))
@@ -129,18 +102,6 @@
 
 (defconst helm-gtags2--include-regexp
   "\\`\\s-*#\\(?:include\\|import\\)\\s-*[\"<]\\(?:[./]*\\)?\\(.*?\\)[\">]")
-
-(defmacro helm-declare-obsolete-variable (old new version)
-  `(progn
-     (defvaralias ,old ,new)
-     (make-obsolete-variable ,old ,new ,version)))
-
-(helm-declare-obsolete-variable
- 'helm-c-gtags-path-style 'helm-gtags2-path-style "0.8")
-(helm-declare-obsolete-variable
- 'helm-c-gtags-ignore-case 'helm-gtags2-ignore-case  "0.8")
-(helm-declare-obsolete-variable
- 'helm-c-gtags-read-only 'helm-gtags2-read-only "0.8")
 
 ;; completsion function for completing-read.
 (defun helm-gtags2--completing-gtags (string predicate code)
@@ -191,11 +152,8 @@
       (push "-c" options))
     (helm-aif (assoc-default type helm-gtags2--search-option-alist)
         (push it options))
-    (when (or (eq helm-gtags2-path-style 'absolute)
-              (helm-gtags2--use-abs-path-p gtagslibpath))
+    (when (helm-gtags2--use-abs-path-p gtagslibpath)
       (push "-a" options))
-    (when helm-gtags2-ignore-case
-      (push "-i" options))
     (when (and current-prefix-arg (not find-file-p))
       (push "-l" options))
     (when gtagslibpath
@@ -233,21 +191,13 @@
   (let ((tagname (helm-gtags2--token-at-point type))
         (prompt (assoc-default type helm-gtags2--prompt-alist))
         (comp-func (assoc-default type helm-gtags2-comp-func-alist)))
-    (if (and tagname helm-gtags2-use-input-at-cursor)
-        tagname
-      (when (and (not tagname) default-tagname)
-        (setq tagname default-tagname))
-      (when tagname
-        (setq prompt (format "%s(default \"%s\") " prompt tagname)))
-      (let ((completion-ignore-case helm-gtags2-ignore-case)
-            (completing-read-function 'completing-read-default))
-        (if (and helm-gtags2-direct-helm-completing (memq type '(tag rtag symbol find-file)))
-            (helm-comp-read prompt comp-func
-                            :history 'helm-gtags2--completing-history
-                            :exec-when-only-one t
-                            :default tagname)
-          (completing-read prompt comp-func nil nil nil
-                           'helm-gtags2--completing-history tagname))))))
+    (when (and (not tagname) default-tagname)
+      (setq tagname default-tagname))
+    (when tagname
+      (setq prompt (format "%s(default \"%s\") " prompt tagname)))
+    (let ((completing-read-function 'completing-read-default))
+      (completing-read prompt comp-func nil nil nil
+                       'helm-gtags2--completing-history tagname))))
 
 (defun helm-gtags2--path-libpath-p (tagroot)
   (helm-aif (getenv "GTAGSLIBPATH")
@@ -278,10 +228,8 @@
 (defun helm-gtags2--base-directory ()
   (let ((dir (or helm-gtags2--last-default-directory
                  helm-gtags2--local-directory
-                 (cl-case helm-gtags2-path-style
-                   (root (or helm-gtags2--real-tag-location
-                             helm-gtags2--tag-location))
-                   (otherwise default-directory))))
+                 helm-gtags2--real-tag-location
+                 helm-gtags2--tag-location))
         (remote (file-remote-p default-directory)))
     (if (and remote (not (file-remote-p dir)))
         (concat remote dir)
@@ -301,16 +249,11 @@
 (defsubst helm-gtags2--save-current-context ()
   (setq helm-gtags2--saved-context (helm-gtags2--current-context)))
 
-(defun helm-gtags2--open-file (file readonly)
-  (if readonly
-      (find-file-read-only file)
-    (find-file file)))
+(defun helm-gtags2--open-file (file)
+  (find-file file))
 
-(defun helm-gtags2--open-file-other-window (file readonly)
-  (setq helm-gtags2--use-otherwin nil)
-  (if readonly
-      (find-file-read-only-other-window file)
-    (find-file-other-window file)))
+(defun helm-gtags2--open-file-other-window (file)
+  (find-file-other-window file))
 
 (defun helm-gtags2--get-context-info ()
   (let* ((tag-location (helm-gtags2--find-tag-directory))
@@ -386,19 +329,6 @@
         (kill-buffer (current-buffer)))
       retval)))
 
-(defun helm-gtags2--show-detail ()
-  (goto-char (point-min))
-  (while (not (eobp))
-    (let ((line (helm-current-line-contents)))
-      (let* ((file-and-line (helm-gtags2--extract-file-and-line line))
-             (file (car file-and-line))
-             (ref-line (cdr file-and-line))
-             (ref-func (helm-gtags2--referer-function file ref-line)))
-        (when ref-func
-          (search-forward ":" nil nil 2)
-          (insert " " ref-func "|"))
-        (forward-line 1)))))
-
 (defun helm-gtags2--print-path-in-gtagslibpath (args)
   (let ((libpath (getenv "GTAGSLIBPATH")))
     (when libpath
@@ -406,7 +336,7 @@
         (let ((default-directory (file-name-as-directory path)))
           (apply #'process-file "global" nil t nil "-Poa" args))))))
 
-(defun helm-gtags2--exec-global-command (type input &optional detail)
+(defun helm-gtags2--exec-global-command (type input)
   (let ((args (helm-gtags2--construct-command type input)))
     (helm-gtags2--find-tag-directory)
     (helm-gtags2--save-current-context)
@@ -421,9 +351,7 @@
           ;; --path options does not support searching under GTAGSLIBPATH
           (when (eq type 'find-file)
             (helm-gtags2--print-path-in-gtagslibpath args))
-          (helm-gtags2--remove-carrige-returns)
-          (when detail
-            (helm-gtags2--show-detail)))))))
+          (helm-gtags2--remove-carrige-returns))))))
 
 (defun helm-gtags2--construct-command (type &optional in)
   (setq helm-gtags2--local-directory nil)
@@ -441,13 +369,13 @@
   (helm-gtags2--exec-global-command 'tag input))
 
 (defun helm-gtags2--pattern-init (&optional input)
-  (helm-gtags2--exec-global-command 'pattern input helm-gtags2-display-style))
+  (helm-gtags2--exec-global-command 'pattern input))
 
 (defun helm-gtags2--rtags-init (&optional input)
-  (helm-gtags2--exec-global-command 'rtag input helm-gtags2-display-style))
+  (helm-gtags2--exec-global-command 'rtag input))
 
 (defun helm-gtags2--gsyms-init ()
-  (helm-gtags2--exec-global-command 'symbol nil helm-gtags2-display-style))
+  (helm-gtags2--exec-global-command 'symbol nil))
 
 (defun helm-gtags2--files-init ()
   (helm-gtags2--exec-global-command 'find-file nil))
@@ -491,13 +419,8 @@
     (push context context-stack)
     (helm-gtags2--put-context-stack helm-gtags2--tag-location -1 context-stack)))
 
-(defsubst helm-gtags2--select-find-file-func ()
-  (if helm-gtags2--use-otherwin
-      #'helm-gtags2--open-file-other-window
-    #'helm-gtags2--open-file))
-
 (defun helm-gtags2--do-open-file (open-func file line)
-  (funcall open-func file helm-gtags2-read-only)
+  (funcall open-func)
   (goto-char (point-min))
   (forward-line (1- line))
   (back-to-indentation)
@@ -522,17 +445,15 @@
     (let ((elems (split-string cand ":")))
       (cons (cl-first elems) (string-to-number (cl-second elems))))))
 
-(defun helm-gtags2--action-openfile (cand)
+(defun helm-gtags2--action-openfile (cand &optional func)
   (let* ((file-and-line (helm-gtags2--extract-file-and-line cand))
          (filename (car file-and-line))
          (line (cdr file-and-line))
-         (open-func (helm-gtags2--select-find-file-func))
          (default-directory (helm-gtags2--base-directory)))
-    (helm-gtags2--do-open-file open-func filename line)))
+    (helm-gtags2--do-open-file (or func #'helm-gtags2--open-file) filename line)))
 
 (defun helm-gtags2--action-openfile-other-window (cand)
-  (let ((helm-gtags2--use-otherwin t))
-    (helm-gtags2--action-openfile cand)))
+  (helm-gtags2--action-openfile cand #'helm-gtags2--open-file-other-window))
 
 (defun helm-gtags2--file-content-at-pos (file pos)
   (with-current-buffer (find-file-noselect file)
@@ -544,10 +465,8 @@
               (helm-current-line-contents)))))
 
 (defun helm-gtags2--files-candidate-transformer (file)
-  (if (eq helm-gtags2-path-style 'absolute)
-      file
-    (let ((removed-regexp (concat "\\`" helm-gtags2--tag-location)))
-      (replace-regexp-in-string removed-regexp "" file))))
+  (let ((removed-regexp (concat "\\`" helm-gtags2--tag-location)))
+    (replace-regexp-in-string removed-regexp "" file)))
 
 (defun helm-gtags2--show-stack-init ()
   (cl-loop with context-stack = (plist-get (helm-gtags2--get-context-info) :stack)
@@ -565,8 +484,6 @@
          (filename (car file-and-line))
          (line (cdr file-and-line))
          (default-directory (helm-gtags2--base-directory)))
-    (when (eq helm-gtags2-path-style 'relative)
-      (setq helm-gtags2--last-default-directory default-directory))
     (find-file filename)
     (goto-char (point-min))
     (forward-line (1- line))
@@ -633,9 +550,7 @@
   (let ((remote (file-remote-p default-directory)))
     (if (not remote)
         name
-      (cl-case helm-gtags2-path-style
-        (relative name)
-        (otherwise (concat remote name))))))
+      (concat remote name))))
 
 (defun helm-gtags2--find-file-common (open-fn cand)
   (let ((default-directory (helm-gtags2--base-directory)))
@@ -696,12 +611,7 @@
 
 (defun helm-gtags2--current-file-and-line ()
   (let* ((buffile (buffer-file-name))
-         (path (cl-case helm-gtags2-path-style
-                 (absolute buffile)
-                 (root
-                  (file-relative-name buffile (helm-gtags2--find-tag-directory)))
-                 (relative
-                  (file-relative-name buffile (helm-gtags2--base-directory))))))
+         (path (file-relative-name buffile (helm-gtags2--find-tag-directory))))
     (format "%s:%d" path (line-number-at-pos))))
 
 (defsubst helm-gtags2--clear-variables ()
@@ -731,14 +641,6 @@
   (interactive
    (list (helm-gtags2--read-tagname 'tag)))
   (helm-gtags2--common '(helm-source-gtags-tags) tag))
-
-;;;###autoload
-(defun helm-gtags2-find-tag-other-window (tag)
-  "Jump to definition in other window."
-  (interactive
-   (list (helm-gtags2--read-tagname 'tag)))
-  (setq helm-gtags2--use-otherwin t)
-  (helm-gtags2-find-tag tag))
 
 ;;;###autoload
 (defun helm-gtags2-find-rtag (tag)

@@ -43,14 +43,6 @@
 (defsubst dummy-directory ()
   (file-name-as-directory (concat (expand-file-name default-directory) "dummy")))
 
-(ert-deftest helm-gtags2--set-parsed-file ()
-  "Test utility `helm-gtags2--set-parsed-file'"
-  (let ((this-file (expand-file-name "./this-util.el")))
-    (with-current-buffer (find-file-noselect this-file)
-      (should (string= (helm-gtags2--set-parsed-file) this-file))
-      (should helm-gtags2--parsed-file)
-      (should (string= helm-gtags2--parsed-file this-file)))))
-
 (ert-deftest helm-gtags2--path-libpath-p ()
   "Test utility `helm-gtags2--path-libpath-p'"
   (let ((process-environment '("GTAGSLIBPATH=/foo:/bar:/baz")))
@@ -88,12 +80,10 @@
   (let ((got (helm-gtags2--construct-options 'tag nil)))
     (should (equal got '("--result=grep"))))
 
-  (let* ((helm-gtags2-path-style 'absolute)
-         (helm-gtags2-ignore-case t)
-         (current-prefix-arg t)
+  (let* ((current-prefix-arg t)
          (process-environment (list "GTAGSLIBPATH=foo:bar" ))
          (got (helm-gtags2--construct-options 'symbol t)))
-    (should (equal got '("-T" "-l" "-i" "-a" "-s" "-c" "--result=grep")))))
+    (should (equal got '("-T" "-l" "-s" "-c" "--result=grep")))))
 
 (ert-deftest helm-gtags2--construct-options-force-abs-option ()
   "Test utility `helm-gtags2--construct-options' for special case of Windows system"
@@ -109,20 +99,6 @@
          (helm-gtags2-path-style 'root)
          (got (helm-gtags2--construct-options 'tag t)))
     (should-not (member "-a" got))))
-
-(ert-deftest helm-gtags2--check-browser-installed ()
-  "Test utility `helm-gtags2--browser-installed-p'"
-  (should (ignore-errors (helm-gtags2--check-browser-installed "emacs") t))
-  (should-error (helm-gtags2--check-browser-installed "InternetChromeFox")))
-
-(ert-deftest helm-gtags2--how-to-update-tags ()
-  "Test utility `helm-gtags2--how-to-update-tags'"
-  (should (eq (helm-gtags2--how-to-update-tags) 'single-update))
-  (should (eq (helm-gtags2--how-to-update-tags) 'single-update))
-  (let ((current-prefix-arg '(4)))
-    (should (eq (helm-gtags2--how-to-update-tags) 'entire-update)))
-  (let ((current-prefix-arg 16))
-    (should (eq (helm-gtags2--how-to-update-tags) 'generate-other-directory))))
 
 (ert-deftest helm-gtags2--extract-file-and-line ()
   "Test utility `helm-gtags2--extract-file-and-line'"
