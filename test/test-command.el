@@ -24,27 +24,6 @@
 (require 'ert)
 (require 'helm-gtags2)
 
-(ert-deftest helm-gtags2-clear-all-cache ()
-  "Clear all caches"
-  (let ((helm-gtags2--result-cache (make-hash-table :test 'equal)))
-    (puthash "foo" 'foo helm-gtags2--result-cache)
-    (puthash "bar" 'bar helm-gtags2--result-cache)
-    (call-interactively 'helm-gtags2-clear-all-cache)
-    (should (= (hash-table-count helm-gtags2--result-cache) 0))))
-
-(ert-deftest helm-gtags2-clear-cache ()
-  "Clear caches"
-  (cl-letf (((symbol-function 'helm-gtags2--find-tag-directory)
-             'ignore))
-    (let ((helm-gtags2--result-cache (make-hash-table :test 'equal))
-          (helm-gtags2--real-tag-location "foo/"))
-      (puthash "foo/GTAGS" 'foo1 helm-gtags2--result-cache)
-      (puthash "foo/GPATH" 'foo2 helm-gtags2--result-cache)
-      (puthash "bar" 'bar helm-gtags2--result-cache)
-      (call-interactively 'helm-gtags2-clear-cache)
-      (should (= (hash-table-count helm-gtags2--result-cache) 1))
-      (should (eq (gethash "bar" helm-gtags2--result-cache) 'bar)))))
-
 (ert-deftest helm-gtags2-clear-stack ()
   "Clear current stack"
   (cl-letf (((symbol-function 'helm-gtags2--find-tag-directory)
