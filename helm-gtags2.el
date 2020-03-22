@@ -56,8 +56,6 @@
 (require 'subr-x)
 
 (declare-function helm-comp-read "helm-mode")
-(declare-function cygwin-convert-file-name-from-windows "cygw32.c")
-(declare-function cygwin-convert-file-name-to-windows "cygw32.c")
 
 (defgroup helm-gtags2 nil
   "GNU GLOBAL for helm."
@@ -71,10 +69,6 @@
 
 (defcustom helm-gtags2-ignore-case nil
   "Ignore case in each search."
-  :type 'boolean)
-
-(defcustom helm-gtags2-cygwin-use-global-w32-port t
-  "Use the GNU global win32 port in Cygwin."
   :type 'boolean)
 
 (defcustom helm-gtags2-read-only nil
@@ -297,9 +291,6 @@ Always update if value of this variable is nil."
                for libpath = (file-name-as-directory (expand-file-name path))
                thereis (string= tagroot libpath))))
 
-(defsubst helm-gtags2--convert-cygwin-windows-file-name-p ()
-  (and (eq system-type 'cygwin) helm-gtags2-cygwin-use-global-w32-port))
-
 (defun helm-gtags2--tag-directory ()
   (with-temp-buffer
     (helm-aif (getenv "GTAGSROOT")
@@ -309,10 +300,7 @@ Always update if value of this variable is nil."
       (goto-char (point-min))
       (when (looking-at "^\\([^\r\n]+\\)")
         (let ((tag-path (match-string-no-properties 1)))
-          (file-name-as-directory
-           (if (helm-gtags2--convert-cygwin-windows-file-name-p)
-               (cygwin-convert-file-name-from-windows tag-path)
-             tag-path)))))))
+          (file-name-as-directory tag-path))))))
 
 (defun helm-gtags2--find-tag-directory ()
   (setq helm-gtags2--real-tag-location nil)
@@ -413,7 +401,7 @@ Always update if value of this variable is nil."
               helm-gtags2--current-position nil)
       (setq context (nth current-index context-stack)))
     (helm-gtags2--put-context-stack helm-gtags2--tag-location
-                                   current-index context-stack)
+                                    current-index context-stack)
     (helm-gtags2--move-to-context context)))
 
 ;;;###autoload
@@ -433,7 +421,7 @@ Always update if value of this variable is nil."
     (let ((prev-context (nth current-index context-stack)))
       (helm-gtags2--move-to-context prev-context))
     (helm-gtags2--put-context-stack helm-gtags2--tag-location
-                                   current-index context-stack)))
+                                    current-index context-stack)))
 
 (defun helm-gtags2--get-result-cache (file)
   (helm-gtags2--find-tag-directory)
@@ -552,11 +540,7 @@ Always update if value of this variable is nil."
     (unless token
       (error "Cursor is not on symbol."))
     (let* ((filename (helm-gtags2--real-file-name))
-           (from-here-opt (format "--from-here=%d:%s"
-                                  (line-number-at-pos)
-                                  (if (helm-gtags2--convert-cygwin-windows-file-name-p)
-                                      (cygwin-convert-file-name-to-windows filename)
-                                    filename))))
+           (from-here-opt (format "--from-here=%d:%s" (line-number-at-pos) filename)))
       (setq helm-gtags2--last-input token)
       (with-current-buffer (helm-candidate-buffer 'global)
         (let* ((default-directory (helm-gtags2--base-directory))
@@ -772,7 +756,7 @@ Always update if value of this variable is nil."
          (context-info (helm-gtags2--get-context-info))
          (context-stack (plist-get context-info :stack)))
     (helm-gtags2--put-context-stack helm-gtags2--tag-location
-                                   index context-stack)
+                                    index context-stack)
     (helm-gtags2--move-to-context (nth index context-stack))))
 
 (defvar helm-source-gtags-show-stack

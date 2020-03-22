@@ -252,11 +252,6 @@ Default value is
 
 If this variable is non-nil, preselect current file and line.
 
-#### `helm-gtags2-cygwin-use-global-w32-port`
-
-This variable is only for Cygwin users. If you use both Cygwin version Emacs
-and GNU global, please set `nil` to this variable.
-
 ## Faces
 
 #### `helm-gtags2-file`
