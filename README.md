@@ -60,10 +60,6 @@ You can use those searching commands with prefix key.
 | C--         | Jump to symbol with other window  |
 
 
-#### `helm-gtags2-select`
-
-Tag jump using gtags and helm
-
 #### `helm-gtags2-tags-in-this-function`
 
 Show tagnames which are referenced in this function and jump to them.
@@ -105,18 +101,6 @@ You can jump to the context.
 #### `helm-gtags2-clear-stack`
 
 Clear current context stack.
-
-#### `helm-gtags2-clear-all-stacks`
-
-Clear all context stacks.
-
-#### `helm-gtags2-clear-cache`
-
-Clear current project cache for `helm-gtags2-select` and `helm-gtags2-select-path`
-
-#### `helm-gtags2-clear-all-cache`
-
-Clear all result cache for `helm-gtags2-select` and `helm-gtags2-select-path`
 
 #### `helm-gtags2-resume`
 
@@ -161,14 +145,6 @@ If this variable is non-nil, TAG file is updated after saving buffer
 
 Tags are updated in `after-save-hook' if this seconds is passed from last update
 Always update if value of this variable is nil.
-
-#### `helm-gtags2-cache-select-result`(Default `nil`)
-
-If this variable is non-nil, use cache for `helm-gtags2-select` and `helm-gtags2-select-path`
-
-#### `helm-gtags2-cache-max-result-size`(Default `10MB`)
-
-Max size(bytes) to cache for each select result
 
 #### `helm-gtags2-pulse-at-cursor`(Default `nil`)
 

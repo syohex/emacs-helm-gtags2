@@ -82,14 +82,6 @@
   "If non-nil, pulse at point after jumping"
   :type 'boolean)
 
-(defcustom helm-gtags2-cache-select-result nil
-  "*If non-nil, results of helm-gtags2-select and helm-gtags2-select-path are cached."
-  :type 'boolean)
-
-(defcustom helm-gtags2-cache-max-result-size (* 10 1024 1024) ;10M
-  "Max size(bytes) to cache for each select result."
-  :type 'integer)
-
 (defcustom helm-gtags2-update-interval-second 60
   "Tags are updated in `after-save-hook' if this seconds is passed from last update.
 Always update if value of this variable is nil."
@@ -354,22 +346,6 @@ Always update if value of this variable is nil."
   (or (gethash helm-gtags2--tag-location helm-gtags2--context-stack)
       (helm-gtags2--new-context-info -1 nil)))
 
-;;;###autoload
-(defun helm-gtags2-clear-all-cache ()
-  (interactive)
-  (clrhash helm-gtags2--result-cache))
-
-;;;###autoload
-(defun helm-gtags2-clear-cache ()
-  (interactive)
-  (helm-gtags2--find-tag-directory)
-  (let* ((tag-location (or helm-gtags2--real-tag-location
-                           helm-gtags2--tag-location))
-         (gtags-path (concat tag-location "GTAGS"))
-         (gpath-path (concat tag-location "GPATH")))
-    (remhash gtags-path helm-gtags2--result-cache)
-    (remhash gpath-path helm-gtags2--result-cache)))
-
 (defun helm-gtags2--move-to-context (context)
   (let ((file (plist-get context :file))
         (curpoint (plist-get context :position))
@@ -416,27 +392,6 @@ Always update if value of this variable is nil."
       (helm-gtags2--move-to-context prev-context))
     (helm-gtags2--put-context-stack helm-gtags2--tag-location
                                     current-index context-stack)))
-
-(defun helm-gtags2--get-result-cache (file)
-  (helm-gtags2--find-tag-directory)
-  (let* ((file-path (concat (or helm-gtags2--real-tag-location
-                                helm-gtags2--tag-location)
-                            file))
-         (file-mtime (nth 5 (file-attributes file-path)))
-         (hash-value (gethash file-path helm-gtags2--result-cache))
-         (cached-file-mtime (nth 0 hash-value)))
-    (if (and cached-file-mtime (equal cached-file-mtime file-mtime))
-        (nth 1 hash-value)
-      nil)))
-
-(defun helm-gtags2--put-result-cache (file cache)
-  (helm-gtags2--find-tag-directory)
-  (let* ((file-path (concat (or helm-gtags2--real-tag-location
-                                helm-gtags2--tag-location)
-                            file))
-         (file-mtime (nth 5 (file-attributes file-path)))
-         (hash-value (list file-mtime cache)))
-    (puthash file-path hash-value helm-gtags2--result-cache)))
 
 (defun helm-gtags2--referer-function (file ref-line)
   (let ((is-opened (cl-loop with path = (concat default-directory file)
@@ -734,11 +689,6 @@ Always update if value of this variable is nil."
     :fuzzy-match helm-gtags2-fuzzy-match
     :action 'helm-gtags2--show-stack-action))
 
-;;;###autoload
-(defun helm-gtags2-select ()
-  (interactive)
-  (helm-gtags2--common '(helm-source-gtags-select) nil))
-
 (defsubst helm-gtags2--beginning-of-defun ()
   (cl-case major-mode
     ((c-mode c++-mode java-mode) 'c-beginning-of-defun)
@@ -821,47 +771,6 @@ Always update if value of this variable is nil."
     :persistent-action 'helm-gtags2--persistent-action
     :fuzzy-match helm-gtags2-fuzzy-match
     :action helm-gtags2--find-file-action))
-
-(defsubst helm-gtags2--action-by-timer (src)
-  (run-with-timer 0.1 nil (lambda () (helm-gtags2--common (list src) nil))))
-
-(defun helm-gtags2--select-tag-action (c)
-  (helm-gtags2--action-by-timer (helm-gtags2--source-select-tag c)))
-
-(defun helm-gtags2--select-rtag-action (c)
-  (helm-gtags2--action-by-timer (helm-gtags2--source-select-rtag c)))
-
-(defun helm-gtags2--select-cache-init-common (args tagfile)
-  (let ((cache (helm-gtags2--get-result-cache tagfile)))
-    (if cache
-        (insert cache)
-      (apply #'process-file "global" nil t nil args)
-      (let* ((cache (buffer-string))
-             (cache-size (length cache)))
-        (when (<= cache-size helm-gtags2-cache-max-result-size)
-          (helm-gtags2--put-result-cache tagfile cache))))))
-
-(defun helm-gtags2--source-select-init ()
-  (with-current-buffer (helm-candidate-buffer 'global)
-    (if (not helm-gtags2-cache-select-result)
-        (progn
-          (process-file "global" nil t nil "-c")
-          (helm-gtags2--remove-carrige-returns))
-      (helm-gtags2--select-cache-init-common '("-c") "GTAGS"))))
-
-(defvar helm-source-gtags-select
-  (helm-build-in-buffer-source "Find tag from here"
-    :init 'helm-gtags2--source-select-init
-    :candidate-number-limit helm-gtags2-maximum-candidates
-    :persistent-action #'ignore
-    :fuzzy-match helm-gtags2-fuzzy-match
-    :action (helm-make-actions
-             "Goto the location" #'helm-gtags2--select-tag-action
-             "Goto the location(other buffer)"
-             (lambda (c)
-               (setq helm-gtags2--use-otherwin t)
-               (helm-gtags2--select-tag-action c))
-             "Move to the referenced point" #'helm-gtags2--select-rtag-action)))
 
 (defun helm-gtags2--file-name (name)
   (let ((remote (file-remote-p default-directory)))
