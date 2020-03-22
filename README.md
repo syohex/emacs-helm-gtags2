@@ -1,4 +1,4 @@
-# helm-gtags2.el
+# helm-gtags2.el ![](https://github.com/syohex/emacs-helm-gtags2/workflows/CI/badge.svg)
 
 ## Introduction
 `helm-gtags2.el` is GNU GLOBAL helm interface.
