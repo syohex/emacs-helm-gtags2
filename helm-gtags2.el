@@ -1,8 +1,8 @@
 ;;; helm-gtags2.el --- GNU GLOBAL helm interface -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016 by Syohei YOSHIDA
+;; Copyright (C) 2020 by Shohei YOSHIDA
 
-;; Author: Syohei YOSHIDA <syohex@gmail.com>
+;; Author: Shohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-helm-gtags2
 ;; Version: 1.5.6
 ;; Package-Requires: ((emacs "26.3") (helm "3.6.0"))
@@ -1089,21 +1089,6 @@ Jump to definition point if cursor is on its reference.
 Jump to reference point if curosr is on its definition"
   (interactive)
   (helm-gtags2--common '(helm-source-gtags-find-tag-from-here) nil))
-
-;;;###autoload
-(defun helm-gtags2-dwim ()
-  "Find by context. Here is
-- on include statement then jump to included file
-- on symbol definition then jump to its references
-- on reference point then jump to its definition."
-  (interactive)
-  (let ((line (helm-current-line-contents)))
-    (if (string-match helm-gtags2--include-regexp line)
-        (let ((helm-gtags2-use-input-at-cursor t))
-          (helm-gtags2-find-files (match-string-no-properties 1 line)))
-      (if (and (buffer-file-name) (thing-at-point 'symbol))
-          (helm-gtags2-find-tag-from-here)
-        (call-interactively 'helm-gtags2-find-tag)))))
 
 (defun helm-gtags2--find-preselect-line ()
   (let ((defun-bound (bounds-of-thing-at-point 'defun)))
