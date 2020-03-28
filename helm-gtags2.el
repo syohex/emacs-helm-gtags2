@@ -249,12 +249,6 @@
 (defsubst helm-gtags2--save-current-context ()
   (setq helm-gtags2--saved-context (helm-gtags2--current-context)))
 
-(defun helm-gtags2--open-file (file)
-  (find-file file))
-
-(defun helm-gtags2--open-file-other-window (file)
-  (find-file-other-window file))
-
 (defun helm-gtags2--get-context-info ()
   (let* ((tag-location (helm-gtags2--find-tag-directory))
          (context-info (gethash tag-location helm-gtags2--context-stack))
@@ -271,7 +265,9 @@
   (let ((file (plist-get context :file))
         (curpoint (plist-get context :position))
         (readonly (plist-get context :readonly)))
-    (helm-gtags2--open-file file readonly)
+    (if readonly
+        (find-file-read-only file)
+      (find-file file))
     (goto-char curpoint)
     (recenter)))
 
@@ -384,9 +380,7 @@
   (let ((buffile (buffer-file-name)))
     (unless buffile
       (error "This buffer is not related to file."))
-    (if (file-remote-p buffile)
-        (tramp-file-name-localname (tramp-dissect-file-name buffile))
-      (file-truename buffile))))
+    (file-truename buffile)))
 
 (defun helm-gtags2--find-tag-from-here-init ()
   (helm-gtags2--find-tag-directory)
@@ -420,7 +414,7 @@
     (helm-gtags2--put-context-stack helm-gtags2--tag-location -1 context-stack)))
 
 (defun helm-gtags2--do-open-file (open-func file line)
-  (funcall open-func)
+  (funcall open-func file)
   (goto-char (point-min))
   (forward-line (1- line))
   (back-to-indentation)
@@ -450,10 +444,10 @@
          (filename (car file-and-line))
          (line (cdr file-and-line))
          (default-directory (helm-gtags2--base-directory)))
-    (helm-gtags2--do-open-file (or func #'helm-gtags2--open-file) filename line)))
+    (helm-gtags2--do-open-file (or func #'find-file) filename line)))
 
 (defun helm-gtags2--action-openfile-other-window (cand)
-  (helm-gtags2--action-openfile cand #'helm-gtags2--open-file-other-window))
+  (helm-gtags2--action-openfile cand #'find-file-other-window))
 
 (defun helm-gtags2--file-content-at-pos (file pos)
   (with-current-buffer (find-file-noselect file)
@@ -494,7 +488,7 @@
    "Open file" #'helm-gtags2--action-openfile
    "Open file other window" #'helm-gtags2--action-openfile-other-window))
 
-(defvar helm-source-gtags-tags
+(defvar helm-source-gtags2-tags
   (helm-build-in-buffer-source "Jump to definitions"
     :init 'helm-gtags2--tags-init
     :candidate-number-limit helm-gtags2-maximum-candidates
@@ -502,7 +496,7 @@
     :persistent-action 'helm-gtags2--persistent-action
     :action helm-gtags2--find-file-action))
 
-(defvar helm-source-gtags-rtags
+(defvar helm-source-gtags2-rtags
   (helm-build-in-buffer-source "Jump to references"
     :init 'helm-gtags2--rtags-init
     :candidate-number-limit helm-gtags2-maximum-candidates
@@ -510,7 +504,7 @@
     :persistent-action 'helm-gtags2--persistent-action
     :action helm-gtags2--find-file-action))
 
-(defvar helm-source-gtags-gsyms
+(defvar helm-source-gtags2-gsyms
   (helm-build-in-buffer-source "Jump to symbols"
     :init 'helm-gtags2--gsyms-init
     :candidate-number-limit helm-gtags2-maximum-candidates
@@ -640,21 +634,21 @@
   "Jump to definition"
   (interactive
    (list (helm-gtags2--read-tagname 'tag)))
-  (helm-gtags2--common '(helm-source-gtags-tags) tag))
+  (helm-gtags2--common '(helm-source-gtags2-tags) tag))
 
 ;;;###autoload
 (defun helm-gtags2-find-rtag (tag)
   "Jump to referenced point"
   (interactive
    (list (helm-gtags2--read-tagname 'rtag (which-function))))
-  (helm-gtags2--common '(helm-source-gtags-rtags) tag))
+  (helm-gtags2--common '(helm-source-gtags2-rtags) tag))
 
 ;;;###autoload
 (defun helm-gtags2-find-symbol (tag)
   "Jump to the symbol location"
   (interactive
    (list (helm-gtags2--read-tagname 'symbol)))
-  (helm-gtags2--common '(helm-source-gtags-gsyms) tag))
+  (helm-gtags2--common '(helm-source-gtags2-gsyms) tag))
 
 ;;;###autoload
 (defun helm-gtags2-pop-stack ()
