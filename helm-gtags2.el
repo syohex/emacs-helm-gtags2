@@ -271,7 +271,6 @@
     (goto-char curpoint)
     (recenter)))
 
-;;;###autoload
 (defun helm-gtags2-next-history ()
   "Jump to next position on context stack"
   (interactive)
@@ -291,7 +290,6 @@
                                     current-index context-stack)
     (helm-gtags2--move-to-context context)))
 
-;;;###autoload
 (defun helm-gtags2-previous-history ()
   "Jump to previous position on context stack"
   (interactive)
@@ -629,28 +627,24 @@
         (helm-attrset 'name (format "%s in %s" tagname (or dir tagroot)) src))
       (helm :sources srcs :buffer helm-gtags2--buffer))))
 
-;;;###autoload
 (defun helm-gtags2-find-tag (tag)
   "Jump to definition"
   (interactive
    (list (helm-gtags2--read-tagname 'tag)))
   (helm-gtags2--common '(helm-source-gtags2-tags) tag))
 
-;;;###autoload
 (defun helm-gtags2-find-rtag (tag)
   "Jump to referenced point"
   (interactive
    (list (helm-gtags2--read-tagname 'rtag (which-function))))
   (helm-gtags2--common '(helm-source-gtags2-rtags) tag))
 
-;;;###autoload
 (defun helm-gtags2-find-symbol (tag)
   "Jump to the symbol location"
   (interactive
    (list (helm-gtags2--read-tagname 'symbol)))
   (helm-gtags2--common '(helm-source-gtags2-gsyms) tag))
 
-;;;###autoload
 (defun helm-gtags2-pop-stack ()
   "Jump to previous point on the context stack and pop it from stack."
   (interactive)
@@ -660,7 +654,6 @@
     (helm-gtags2--put-context-stack helm-gtags2--tag-location -1 context-stack)
     (helm-gtags2--move-to-context context)))
 
-;;;###autoload
 (defun helm-gtags2-clear-stack ()
   "Clear current context stack."
   (interactive)
@@ -668,20 +661,31 @@
     (message "Clear '%s' context stack." tag-location)
     (remhash tag-location helm-gtags2--context-stack)))
 
-;;;###autoload
 (defun helm-gtags2-clear-all-stacks ()
   "Clear all context stacks."
   (interactive)
   (message "Clear all context statks.")
   (setq helm-gtags2--context-stack (make-hash-table :test 'equal)))
 
-;;;###autoload
 (defun helm-gtags2-resume ()
   "Resurrect previously invoked `helm-gtags2` command."
   (interactive)
   (unless (get-buffer helm-gtags2--buffer)
     (error "Error: helm-gtags2 buffer is not existed."))
   (helm-resume helm-gtags2--buffer))
+
+(defun helm-gtags2-tag-continue ()
+  "Jump to next candidate position"
+  (interactive)
+  (unless (get-buffer helm-gtags2--buffer)
+    (error "Error: helm-gtags2 buffer is not existed."))
+  (let ((next-candidate
+         (with-current-buffer (get-buffer helm-gtags2--buffer)
+           (forward-line 1)
+           (when (eobp)
+             (error "No more candidate"))
+           (buffer-substring-no-properties (point) (line-end-position)))))
+    (helm-gtags2--action-openfile next-candidate)))
 
 (defvar helm-gtags2-mode-name " HelmGtags2")
 (defvar helm-gtags2-mode-map (make-sparse-keymap))
