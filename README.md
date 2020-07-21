@@ -69,6 +69,10 @@ Resurrect previously invoked `helm-gtags2` command.
 This is similar to `helm-resume` however this command resurrects helm gtags
 buffer if other helm commands are called.
 
+#### `helm-gtags2-tag-continue`
+
+Jump to next candidate
+
 ## Customize Variables
 
 #### `helm-gtags2-highlight-candidate`(Default `t`)
