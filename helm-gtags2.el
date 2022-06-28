@@ -349,7 +349,7 @@
 
 (defun helm-gtags2--construct-command (type &optional in)
   (setq helm-gtags2--local-directory nil)
-  (let ((dir (helm-attr 'helm-gtags2-base-directory (helm-get-current-source))))
+  (let ((dir (helm-get-attr 'helm-gtags2-base-directory (helm-get-current-source))))
     (when (and dir (not (eq type 'find-file)))
       (setq helm-gtags2--local-directory dir)))
   (let ((input (or in helm-gtags2--query))
@@ -622,9 +622,9 @@
     (when tagname
       (setq helm-gtags2--query tagname))
     (let ((tagroot (helm-gtags2--find-tag-simple)))
-      (helm-attrset 'helm-gtags2-base-directory dir src)
+      (helm-set-attr 'helm-gtags2-base-directory dir src)
       (when tagname
-        (helm-attrset 'name (format "%s in %s" tagname (or dir tagroot)) src))
+        (helm-set-attr 'name (format "%s in %s" tagname (or dir tagroot)) src))
       (helm :sources srcs :buffer helm-gtags2--buffer))))
 
 (defun helm-gtags2-find-tag (tag)
@@ -691,7 +691,7 @@
 (defvar helm-gtags2-mode-map (make-sparse-keymap))
 
 ;;;###autoload
-(define-minor-mode helm-gtags2-mode ()
+(define-minor-mode helm-gtags2-mode
   "Enable helm-gtags2"
   :init-value nil
   :global     nil
