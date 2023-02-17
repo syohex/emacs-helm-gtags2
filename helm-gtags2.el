@@ -511,7 +511,7 @@
     :action helm-gtags2--find-file-action))
 
 (defun helm-gtags2--highlight-candidate (candidate)
-  (let ((regexp (concat "\\_<" helm-gtags2--last-input "\\_>"))
+  (let ((regexp (concat "\\<" helm-gtags2--last-input "\\>"))
         (limit (1- (length candidate)))
         (last-pos 0)
         (case-fold-search nil))
