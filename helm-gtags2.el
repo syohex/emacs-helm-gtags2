@@ -1,11 +1,11 @@
 ;;; helm-gtags2.el --- GNU GLOBAL helm interface -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2020 by Shohei YOSHIDA
+;; Copyright (C) 2023 by Shohei YOSHIDA
 
 ;; Author: Shohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-helm-gtags2
 ;; Version: 1.5.6
-;; Package-Requires: ((emacs "27.1") (helm "3.6.0"))
+;; Package-Requires: ((emacs "29.1") (helm "3.6.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
